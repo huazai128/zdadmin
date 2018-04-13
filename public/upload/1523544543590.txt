@@ -1,0 +1,43 @@
+server
+    {
+        listen 80;
+        server_name www.appstest.cn appstest.cn;
+
+        location /admin {
+          alias /root/zd-admin;
+          index index.html;
+        }
+
+        location /h5 {
+          alias /root/zd-h5;
+          index index.html;
+        }
+
+        location / {
+           alias /root/zhangdong/build/static/;
+           index ../html/index.html;
+        }
+
+    
+       location /api/
+        {
+            proxy_pass http://127.0.0.1:4201/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_buffer_size 128k;
+            proxy_buffers 32 32k;
+            proxy_busy_buffers_size 128k;
+
+        }
+
+
+mongodb : /opt/mongodb/data/
+
+
+1）alias指定的目录是准确的，即location匹配访问的path目录下的文件直接是在alias目录下查找的；
+2）root指定的目录是location匹配访问的path目录的上一级目录,这个path目录一定要是真实存在root指定目录下的；
+3）使用alias标签的目录块中不能使用rewrite的break（具体原因不明）；另外，alias指定的目录后面必须要加上"/"符号！！
+4）alias虚拟目录配置中，location匹配的path目录如果后面不带"/"，那么访问的url地址中这个path目录后面加不加"/"不影响访问，访问时它会自动加上"/"；
+    但是如果location匹配的path目录后面加上"/"，那么访问的url地址中这个path目录必须要加上"/"，访问时它不会自动加上"/"。如果不加上"/"，访问就会失败！
+5）root目录配置中，location匹配的path目录后面带不带"/"，都不会影响访问。

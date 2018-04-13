@@ -1,0 +1,53 @@
+
+公司线上git项目管理地址： http://git.prod.fongwell.com:10080/  用户名：zhouweihua@fongwell.com 密码：fongwell
+本地  git.fongwell.com
+
+天威项目管理进程： jira.lan.fongwell.com  用户名：zhouweihua 密码：fongwell
+
+天威后天接口： http://121.201.14.250:84/swagger/ui/index#/SysBase
+
+邮箱https://exmail.qq.com  用户名：zhouweihua@fongwell.com  密码：Fongwell2014
+
+大信通数据接口：https://www.showdoc.cc/1695729?page_id=15633271 密码：dxt123
+
+UAT:
+后端接口：
+https://testtuan.daxinmall.com/uatwx/wx/
+页面访问地址：
+https://testtuan.daxinmall.com/uatwx/fhw/
+
+开发:
+后端接口：
+https://testtuan.daxinmall.com/wxtest/wx/
+页面访问地址：
+https://testtuan.daxinmall.com/wxtest/fhw/
+
+三会项目:http://git.prod.fongwell.com:10080/wudanyang/sanhui
+
+
+
+三会服务：erp.fongwell.com  用户名fongwell 密码fongwell 端口22
+
+ git status 查看状态
+
+sudo pm2 list： 
+
+拉取项目 git pull origin master
+
+ sudo pm2 restart sanhui ：重启
+
+启动项目是 pm2 start bin/www --name sanhui (三会项目不要加 --watch 监听参数)
+ 
+wdy0504@126.com
+ 
+123456
+
+fongwell官网资料：\\192.168.0.119\pub\MIGUEL FIRENZE平台\PSD
+
+官网DEMO: https://free.modao.cc/workspace/apps/pE2459581661511422606410/preview
+
+
+
+
+fongwell mongodb 数据库位置 cd /usr/local/mongodb/bin
+

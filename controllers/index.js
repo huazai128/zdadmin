@@ -1,0 +1,12 @@
+exports.news = require("./news");
+exports.auth = require("./auth");
+exports.image = require('./image');
+exports.adv = require('./adv');
+exports.views = require('./views');
+exports.forum = require('./forum');
+exports.tag = require('./tag');
+exports.community = require("./community");
+exports.ky = require("./ky");
+exports.comment = require('./comment');
+exports.apply = require("./apply");
+exports.plan = require("./plan");
