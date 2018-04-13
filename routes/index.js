@@ -14,7 +14,6 @@ const routes = (app) => {
         res.header('Content-Type', 'application/json;charset=utf-8');
         res.header('X-Powered-By', 'Nodepress 1.0.0');
 
-        //OPTIONS
         if (req.method == "OPTIONS") { //判断请求方法是否为OPTIONS
             res.sendStatus(200);
             return false;
@@ -53,7 +52,8 @@ const routes = (app) => {
     app.all("/user", controllers.auth.item);
 
     // 图片上传
-    app.all('/image', controllers.image);
+    app.all('/image', controllers.image.list);
+    app.all('/image/:_id', controllers.image.item);
 
     // 广告位管理
     app.all("/adv", controllers.adv.list);
@@ -89,6 +89,7 @@ const routes = (app) => {
     // 申请管理
     app.all("/apply", controllers.apply.list);
     app.all("/apply/:_id", controllers.apply.item);
+    app.all("/excel", controllers.apply.excel);
 
     // 解决方案
     app.all("/plan", controllers.plan.list);

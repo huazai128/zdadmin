@@ -107,7 +107,6 @@ forumCtrl.item.GET = ({ params: { _id } }, res) => {
     })
 }
 
-
 // 修改单个数据
 forumCtrl.item.PUT = ({ params: _id, body: forum  }, res) => {
   if (!forum.title && !forum.content) {
@@ -122,7 +121,6 @@ forumCtrl.item.PUT = ({ params: _id, body: forum  }, res) => {
       handleError({ res, message: "文章修改失败" }, err);
     })
 }
-
 
 exports.list = (req, res) => { handleRequest({ req, res, controller: forumCtrl.list }) }
 exports.item = (req, res) => { handleRequest({ req, res, controller: forumCtrl.item }) }

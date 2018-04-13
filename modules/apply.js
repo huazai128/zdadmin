@@ -43,19 +43,23 @@ const applySchema = new mongoose.Schema({
   user: { type: ObjectId, ref: "Auth" },
 
   // 账户
-  username:{ type:String,default:'' },
+  username: { type: String, default: '' },
 
   // 测试进程状态 0: 完成申请 1：确认需求 2：技术测试 3：结果交付
-  process:{ type: Number, default: 0 },
+  process: { type: Number, default: 0 },
+
+  // 类型 0:测试申请 1：众测平台
+  style: { type: Number, default: 0 },
+  
 });
 
 applySchema.set("toObject", { getters: true });
 applySchema.plugin(mongoosePaginate);
 applySchema.plugin(autoIncrement.plugin, {
   model: 'Apply',
-  field: 'id', 
-  startAt: 1, 
-  incrementBy: 1 
+  field: 'id',
+  startAt: 1,
+  incrementBy: 1
 })
 
 applySchema.pre("findByIdAndUpdate", (next) => {
