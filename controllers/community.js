@@ -27,7 +27,7 @@ comCtrl.list.POST = ({ body: community }, res) => {
 
 // 获取所有数据
 comCtrl.list.GET = (req, res) => {
-  const { keywords, page = 1, pre_page = 10, state, choice, recommend, sort } = req.query;
+  const { keywords, page, pre_page, state, choice, recommend, sort, user_id } = req.query;
   const arr = [0, 1, -1];
   let sortQuery = {};
   if (sort) {
@@ -45,12 +45,10 @@ comCtrl.list.GET = (req, res) => {
   let query = {};
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
-    query = {
-      "$or": [
-        { 'title': ketwordReg },
-        { 'content': ketwordReg }
-      ]
-    }
+    query["$or"] = [
+      { 'title': ketwordReg },
+      { 'content': ketwordReg }
+    ]
   }
   if (arr.includes(Number(state))) {
     query.state = state;
@@ -60,6 +58,9 @@ comCtrl.list.GET = (req, res) => {
   }
   if (recommend) {
     query.recommend = recommend;
+  }
+  if (user_id) {
+    query.userId = user_id;
   }
   Community.paginate(query, options).then((result) => {
     handleSuccess({
@@ -98,34 +99,61 @@ comCtrl.list.PATCH = ({ body: { ids, active } }, res) => {
 
 // 推荐操作
 comCtrl.item.PUT = ({ params: _id, body: community }, res) => {
-  const { choice, recommend } = community;
+  const { choice, recommend, is_collect, user_id } = community;
   let query = {};
+  let str = '设置'
   if (choice !== undefined) {
-    query.choice = choice;
+    query['$set'] = { 'choice':choice };
   }
   if (recommend !== undefined) {
-    query.recommend = recommend;
+    query['$set'] = { 'recommend':recommend };
   }
-  Community.findByIdAndUpdate(_id, { $set: query }, { new: true })
-    .then((result = community) => {
-      handleSuccess({ res, message: "设置成功", result });
-    })
-    .catch((err) => {
-      handleError({ res, message: "设置失败" }, err);
-    })
+  const putCommunityId = () => {
+    Community.findByIdAndUpdate(_id, query, { new: true })
+      .then((result = community) => {
+        handleSuccess({ res, message: `${str}成功`, result });
+      })
+      .catch((err) => {
+        handleError({ res, message: `${str}失败` }, err);
+      })
+  }
+  if (is_collect) {
+    Community.findOne({ _id: _id })
+      .then((result) => {
+        let collect = result.meta.collect || 0;
+        let arr = result.c_user.filter((item) => Object.is(item, user_id));
+        if (!!arr.length) {
+          collect = Number(collect) - 1;
+          query['$pull'] = { 'c_user': user_id };
+          str = "取消收藏"
+        } else {
+          collect = Number(collect) + 1;
+          query['$push'] = { 'c_user': user_id };
+          str = "收藏"
+        }
+        query['$set'] = { 'meta.collect': collect };
+        putCommunityId();
+      })
+      .catch((err) => {
+        handleError({ res, message: "设置失败" }, err);
+      })
+  } else {
+    putCommunityId();
+  }
+
 }
 
 // 获取单个数据
 comCtrl.item.GET = ({ params: { _id } }, res) => {
-  const isById = Object.is(Number(_id), NaN);  
+  const isById = Object.is(Number(_id), NaN);
   (isById ?
-    Community.findById({ _id: _id }) : 
+    Community.findById({ _id: _id }) :
     Community.findOne({ id: _id, state: 1 })
   )
     .then((result) => {
       if (!isById) {
-        result.meta.links += 1;  
-        result.save({ news: true }); 
+        result.meta.links += 1;
+        result.save({ news: true });
         getKy(result);
       } else {
         handleSuccess({ res, message: "文章获取成功", result });
@@ -136,10 +164,10 @@ comCtrl.item.GET = ({ params: { _id } }, res) => {
     })
   const getKy = (result) => {
     Ky.find({ state: 0 }).select("name").then((data) => {
-      if(data.length){
+      if (data.length) {
         data.forEach((item) => {
-          result.title = result.title.replace(new RegExp(item.name,"gm"),"****");
-          result.content = result.content.replace(new RegExp(item.name,"gm"),"****");
+          result.title = result.title.replace(new RegExp(item.name, "gm"), "****");
+          result.content = result.content.replace(new RegExp(item.name, "gm"), "****");
         })
       }
       handleSuccess({ res, message: "文章获取成功", result });

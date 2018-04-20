@@ -7,25 +7,28 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const authSchema = new mongoose.Schema({
     // 用户名
-    username: { type: String, default: 'UUID',},
+    username: { type: String, default: 'UUID', },
 
     // 邮箱 
     email: { type: String, default: '', require: true },
 
     // 头像
-    gravatar: { type: String, default: "" },
+    gravatar: { type: String, default: "/upload/avator.png" },
 
     // 密码
-    password: { type: String, require: true },
+    password: { type: String, required: true },
 
-    // 权限状态 默认为普通管理员
-    status: { type: Number, require: true, default: 0 },
+    // 状态 1:正常 0: 禁言 默认禁言一小时 -1:禁言其他 -2：禁用 -3：删除
+    status: { type: Number, required: true, default: 1 },
 
-    // 用户类型 0:普通用户 1:测试开发用户, 2：后台管理员
-    type: { type: Number, require: true, default: 0 },
+    // 用户类型 0:普通用户 1:测试开发用户, 2：后台管理员 3:超级管理员
+    type: { type: Number, required: true, default: 0 },
 
     // 真实姓名
-    name: String,
+    name: { type: String, required: true },
+
+    // 身份证
+    card: { type: String, required: true },
 
     // 公司名称
     company: String,
@@ -37,13 +40,22 @@ const authSchema = new mongoose.Schema({
     job: String,
 
     // 资历
-    record:String,
+    record: String,
 
-    //创建时间
+    // 创建时间
     create_at: { type: Date, default: Date.now },
 
-    //更新时间
+    // 更新时间
     update_at: { type: Date, default: Date.now },
+
+    // 禁言时间
+    time: { type: Date },
+
+    // 禁言时间名称
+    time_name: { type: String },
+
+    // 权限状态 admin: 超级会员
+    // state:{ type:String }
 
 });
 

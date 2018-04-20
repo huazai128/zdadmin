@@ -27,11 +27,12 @@ const routes = (app) => {
             }
         }
         // 排除auth的post请求 && 评论的post请求 && like请求
-        const isLike = Object.is(req.url, '/like') && Object.is(req.method, 'POST');
+        const isLike = Object.is(req.url, '/apply') && Object.is(req.method, 'POST');
         const isPostAuth = Object.is(req.url, '/auth') && Object.is(req.method, 'POST');
+        const isPostAccount = Object.is(req.url, '/account') && Object.is(req.method, 'POST');
         const isPostUser = Object.is(req.url, '/user') && Object.is(req.method, 'POST');
         const isPostComment = Object.is(req.url, '/comment') && Object.is(req.method, 'POST');
-        if (isLike || isPostAuth || isPostComment || isPostUser) {
+        if (isLike || isPostAuth || isPostComment || isPostUser || isPostAccount) {
             next();
             return false;
         };
@@ -42,6 +43,7 @@ const routes = (app) => {
         }
         next();
     });
+    
     // Api
     app.get("/", (req, res) => {
         res.jsonp(config.INFO);
@@ -49,7 +51,8 @@ const routes = (app) => {
 
     // 用户权限管理
     app.all("/auth", controllers.auth.list);
-    app.all("/user", controllers.auth.item);
+    app.all("/auth/:_id", controllers.auth.item);
+    app.all("/user", controllers.auth.other);
 
     // 图片上传
     app.all('/image', controllers.image.list);
@@ -94,6 +97,11 @@ const routes = (app) => {
     // 解决方案
     app.all("/plan", controllers.plan.list);
     app.all("/plan/:_id", controllers.plan.item);
+
+    // 后台账号登录管理
+    app.all("/account", controllers.user.list);
+    app.all("/account/:_id", controllers.user.item);
+    app.all("/account_post", controllers.user.other);
 
     app.all("*", (req, res) => {
         res.status(404).jsonp({

@@ -40,11 +40,9 @@ kyCtrls.list.GET = (req, res) => {
   }
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
-    query = {
-      "$or": [
-        { 'name': ketwordReg },
-      ]
-    }
+    query["$or"] = [
+      { 'name': ketwordReg },
+    ]
   }
   Ky.paginate(query, options)
     .then(kys => {

@@ -31,15 +31,13 @@ planCtrl.list.GET = (req, res) => {
   }
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
-    query = {
-      "$or": [
-        { 'company': ketwordReg },
-        { 'scale': ketwordReg },
-        { 'name': ketwordReg },
-        { 'industry': ketwordReg },
-        { 'email': ketwordReg },
-      ]
-    }
+    query["$or"] = [
+      { 'company': ketwordReg },
+      { 'scale': ketwordReg },
+      { 'name': ketwordReg },
+      { 'industry': ketwordReg },
+      { 'email': ketwordReg },
+    ]
   }
   if (start, end) {
     const startDate = new Date(Number(start));
@@ -90,9 +88,9 @@ planCtrl.list.PATCH = ({ body: { ids, state } }, res) => {
 
 // 根据id获取详情
 planCtrl.item.GET = ({ params: { _id } }, res) => {
-  const isFindById = Object.is(Number(_id), NaN);  
+  const isFindById = Object.is(Number(_id), NaN);
   (isFindById ?
-    Plan.findById({ _id: _id }) : 
+    Plan.findById({ _id: _id }) :
     Plan.findOne({ id: Number(_id) })
   )
     .then((result) => {

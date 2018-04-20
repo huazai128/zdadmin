@@ -39,11 +39,9 @@ advCtrl.list.GET = (req, res) => {
   // 判断keyword 
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
-    query = {
-      "$or": [ //$or: 
-        { 'title': ketwordReg },
-      ]
-    }
+    query["$or"] = [ 
+      { 'title': ketwordReg },
+    ]
   }
   // 按照state查询
   if (arr.includes(state)) {

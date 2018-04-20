@@ -36,13 +36,13 @@ const applySchema = new mongoose.Schema({
   // 最后更新时间
   update_at: { type: Date },
 
-  // 状态 0: 待审核 1：审核 -1： 不通过 -2：删除
+  // 状态 0: 待审核 1：已审核 -1： 不通过 -2：删除
   state: { type: Number, default: 0 },
 
-  // 用户
+  // 用户 申请用户id
   user: { type: ObjectId, ref: "Auth" },
 
-  // 账户
+  // 账户 申请时用户名称
   username: { type: String, default: '' },
 
   // 测试进程状态 0: 完成申请 1：确认需求 2：技术测试 3：结果交付
@@ -50,6 +50,12 @@ const applySchema = new mongoose.Schema({
 
   // 类型 0:测试申请 1：众测平台
   style: { type: Number, default: 0 },
+
+  // 众测派单用户
+  p_user:{ type: ObjectId, ref: "Auth" },
+
+  // 众测品台派单状态 0：派单中 1：完成派单
+  p_state:{ type: Number, default: 0 }, 
   
 });
 

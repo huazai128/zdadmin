@@ -11,7 +11,7 @@ const commentShema = new mongoose.Schema({
     // 评论者用户
     user_id: { type: ObjectId, ref: "Auth", required: true },
 
-    // 评论所在的文章id，0代表系统留言板
+    // 文章id
     post_id: { type: String, required: true },
 
     // 回复评论者id
@@ -20,11 +20,8 @@ const commentShema = new mongoose.Schema({
     // 用户名称
     username: { type: String, default: "" },
 
-    // 判断用户是否点赞
-    like_user: { type: ObjectId, ref: "Auth" },
-
-    // 点赞状态
-    is_like: { type: Boolean, default: false },
+    // 点赞用户
+    like_user: [{ type: String }],
 
     // 评论内容
     content: { type: String, required: true },

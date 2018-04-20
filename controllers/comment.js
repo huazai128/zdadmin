@@ -39,9 +39,16 @@ const updateCommunityCommentCount = (post_ids = []) => {
   }
 }
 
-
 // 添加评论
 commentCtrl.list.POST = ({ body: comment }, res) => {
+  if (!comment.user_id) {
+    handleError({ res, message: '请先登录!' });
+    return false;
+  }
+  if (!comment.content) {
+    handleError({ res, message: '请输入评论!' });
+    return false;
+  }
   const saveComment = () => {
     new Comment(comment).save()
       .then((result = comment) => {
@@ -52,28 +59,28 @@ commentCtrl.list.POST = ({ body: comment }, res) => {
         handleError({ res, err, message: '评论发布失败' });
       })
   }
-  
   // 查找所有关键字
-  Ky.find({ state:0 }).select("name").then((res) => {
-    if(res.length){
-      let arr = res.filter((item) => (`/${item.name}/ig`).test(comment.content));
-      if(arr.length){
-        handleError({ res, err, message: '内容不合法' });
-      }else{
+  Ky.find({ state: 0 }).select("name")
+    .then((result) => {
+      if (result.length) {
+        let arr = result.filter((item) => eval(`/${item.name}/ig`).test(comment.content));
+        if (!!arr.length) {
+          handleError({ res, message: '内容不合法' });
+        } else {
+          saveComment();
+        }
+      } else {
         saveComment();
       }
-    }else{
-      saveComment();
-    }
-  })
-  .catch((err) => {
-    handleError({ res, err, message: '内容不合法' });
-  })
+    })
+    .catch((err) => {
+      handleError({ res, err, message: '评论失败' });
+    })
 }
 
 // 获取评论
 commentCtrl.list.GET = (req, res) => {
-  let { sort = -1, page = 1, pre_page = 10, id, state, keywords = '' } = req.query;
+  let { sort = -1, page = 1, pre_page = 10, id, state, keywords = '', c_userId } = req.query;
   sort = Number(sort);
   state = !Object.is(state, undefined) ? Number(state) : null;
   let sele = {
@@ -83,7 +90,7 @@ commentCtrl.list.GET = (req, res) => {
     sort: { _id: sort },
     page: Number(page),
     limit: Number(pre_page),
-    populate: [{ path: "user_id", sele }, { path: "reply_id", sele }, { path: 'like_user', sele }],
+    populate: [{ path: "user_id", sele }, { path: "reply_id", sele }],
   };
   if ([1, -1].includes(sort)) {
     options.sort = { _id: sort };
@@ -127,18 +134,32 @@ commentCtrl.list.GET = (req, res) => {
 
 // 点赞
 commentCtrl.item.PUT = ({ params: { _id }, body: comment }, res) => {
-  if (comment.is_like) {
-    comment.likes = Number(comment.likes) + 1;
-  } else {
-    comment.likes = Number(comment.likes) - 1;
-  }
-  Comment.findByIdAndUpdate(_id, { $set: comment }, { new: true })
-    .then((result) => {
-      handleSuccess({ res, result, message: '设置成功' });
-    })
+  let query = {};
+  let likes = comment.likes;
+  Comment.findOne({ _id: _id }).then((result) => {
+    let arr = result.like_user.filter((item) => Object.is(item, comment.user_id));
+    if (!!arr.length) {
+      likes = Number(comment.likes) - 1;
+      query['$pull'] = { 'like_user': comment.user_id };
+    } else {
+      likes = Number(comment.likes) + 1;
+      query['$push'] = { 'like_user': comment.user_id };
+    }
+    query['$set'] = { 'likes': likes };
+    commnentUpdate();
+  })
     .catch((err) => {
       handleError({ res, err, message: '设置失败' });
     })
+  const commnentUpdate = () => {
+    Comment.findByIdAndUpdate(_id, query, { new: true })
+      .then((result) => {
+        handleSuccess({ res, result, message: '设置成功' });
+      })
+      .catch((err) => {
+        handleError({ res, err, message: '设置失败' });
+      })
+  }
 }
 
 // 评论操作

@@ -38,28 +38,26 @@ newsCtrl.list.GET = (req, res) => {
     }
     let query = {};
 
-    if(column){
+    if (column) {
         query.column = column;
     }
     // 判断keyword 
     if (keywords) {
         const ketwordReg = new RegExp(keywords);
-        query = {
-            "$or": [ //$or: 
-                { 'title': ketwordReg },
-                { 'content': ketwordReg },
-                { 'summary': ketwordReg }
-            ]
-        }
+        query["$or"] = [ //$or: 
+            { 'title': ketwordReg },
+            { 'content': ketwordReg },
+            { 'summary': ketwordReg }
+        ]
     }
     // 发布
-    if (Object.is(Number(public),1)) {
+    if (Object.is(Number(public), 1)) {
         query.time = { // 根据日期查询
             "$lte": new Date()
         };
     }
     // 未发布
-    if(Object.is(Number(public),0)){
+    if (Object.is(Number(public), 0)) {
         query.time = { // 根据日期查询
             "$gte": new Date()
         };
@@ -78,7 +76,7 @@ newsCtrl.list.GET = (req, res) => {
         News.paginate(query, options)
             .then(news => {
                 let datas = news.docs.map((item) => {
-                    item.state = ( new Date(item.time) - new Date() >= 0 ) ? 0 : 1;
+                    item.state = (new Date(item.time) - new Date() >= 0) ? 0 : 1;
                     return item;
                 })
                 handleSuccess({
@@ -163,7 +161,7 @@ newsCtrl.item.GET = ({ params: { _id } }, res) => {
             // id获取
             if (!isFindById) {
                 result.meta.views += 1;  // 查看数量;
-                result.save({news:true}); //保存
+                result.save({ news: true }); //保存
             }
             // id获取
             handleSuccess({ res, message: "文章获取成功", result });

@@ -35,14 +35,12 @@ forumCtrl.list.GET = (req, res) => {
   let query = {};
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
-    query = {
-      "$or": [
-        { 'title': ketwordReg },
-        { 'subtitle': ketwordReg },
-        { 'content': ketwordReg },
-        { 'summary': ketwordReg }
-      ]
-    }
+    query["$or"] = [
+      { 'title': ketwordReg },
+      { 'subtitle': ketwordReg },
+      { 'content': ketwordReg },
+      { 'summary': ketwordReg }
+    ]
   }
   if (arr.includes(Number(state))) {
     query.status = state;
@@ -60,10 +58,10 @@ forumCtrl.list.GET = (req, res) => {
       result: {
         data: result.docs,
         pagination: {
-          total: result.total, // 文章总数
-          current_page: result.page, //  当前页面
-          total_page: result.pages, // 总分页
-          pre_page: result.limit //  限制查询条数
+          total: result.total,
+          current_page: result.page,
+          total_page: result.pages,
+          pre_page: result.limit
         }
       }
     })
@@ -90,15 +88,15 @@ forumCtrl.list.PATCH = ({ body: { ids, active } }, res) => {
 
 // 获取单个数据
 forumCtrl.item.GET = ({ params: { _id } }, res) => {
-  const isFindById = Object.is(Number(_id), NaN);  
+  const isFindById = Object.is(Number(_id), NaN);
   (isFindById ?
     Forum.findById({ _id: _id }).select('-meta -create_at -update_at') :
     Forum.findOne({ id: Number(_id) })
   )
     .then((result) => {
       if (!isFindById) {
-        result.meta.views += 1;  
-        result.save({ news: true }); 
+        result.meta.views += 1;
+        result.save({ news: true });
       }
       handleSuccess({ res, message: "文章获取成功", result });
     })
@@ -108,7 +106,7 @@ forumCtrl.item.GET = ({ params: { _id } }, res) => {
 }
 
 // 修改单个数据
-forumCtrl.item.PUT = ({ params: _id, body: forum  }, res) => {
+forumCtrl.item.PUT = ({ params: _id, body: forum }, res) => {
   if (!forum.title && !forum.content) {
     handleError({ res, message: "缺少必要参数" });
     return false;

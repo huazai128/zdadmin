@@ -17,8 +17,11 @@ const communitySchema = new mongoose.Schema({
   // 推荐 0：不推荐 1：推荐
   recommend: { type: Number, default: 0 },
 
-  // 用户Id
+  // 发布文章用户Id
   userId: { type: ObjectId, ref: 'Auth' },
+  
+  // 收藏用户ID
+  c_user: [{ type: String }],
 
   // 状态 0:屏蔽 1：不屏蔽 -1: 回收站
   state: { type: Number, default: 1 },
@@ -38,7 +41,9 @@ const communitySchema = new mongoose.Schema({
     comments: { type: Number, default: 0 }, //评论数量
     collect: { type: Number, default: 0 }, // 收藏数量
   },
+
 })
+
 communitySchema.set("toObject", { getters: true });//
 communitySchema.plugin(mongoosePaginate);// 添加mongoose分页插件
 communitySchema.plugin(autoIncrement.plugin, { //自增ID插件配置

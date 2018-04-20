@@ -10,3 +10,4 @@ exports.ky = require("./ky");
 exports.comment = require('./comment');
 exports.apply = require("./apply");
 exports.plan = require("./plan");
+exports.user = require("./user");
