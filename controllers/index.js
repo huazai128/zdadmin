@@ -11,3 +11,4 @@ exports.comment = require('./comment');
 exports.apply = require("./apply");
 exports.plan = require("./plan");
 exports.user = require("./user");
+exports.other = require("./other");

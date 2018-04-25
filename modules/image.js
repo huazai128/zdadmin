@@ -5,13 +5,16 @@ const ImageSchema = new mongoose.Schema({
     // 派送文件路径
     url: { type: String, default: "" },
 
-    // 派单者上传文件
+    // 文件相对路径
     p_url: { type: String, default: "" },
 
-    // 派单者上传文件状态, 0:未推送文件 1：已推送文件
+    // 派单状态 0: 未派单 1： 派单
     p_state: { type: Number, default: 0 },
 
-    // 状态 1:已完成， 0:未完成
+    // 确认是否完成 0 ：未完成 1： 完成
+    u_state: { type: Number, default: 0 },
+
+    // 状态 1:已完成， 0:未完成 -1: 已取消 
     state: { type: Number, default: 0 },
 
     // 关联
@@ -33,5 +36,6 @@ ImageSchema.pre("findOneAnfUpdate", (next) => {
     this.findOneAndUpdate({}, { update_at: Date.now() });
     next();
 })
+
 const Image = mongoose.model("Image", ImageSchema);
 module.exports = Image; 

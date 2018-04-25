@@ -39,7 +39,7 @@ const commentShema = new mongoose.Schema({
     create_at: { type: Date, default: Date.now },
 
     // 最后更新时间
-    update_at: { type: Date },
+    update_at: { type: Date, default: Date.now },
 
 });
 

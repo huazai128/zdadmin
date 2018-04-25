@@ -30,7 +30,7 @@ forumCtrl.list.GET = (req, res) => {
     sort: { _id: -1 },
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: 'tags', // 关联查询
+    populate: 'tags', 
   }
   let query = {};
   if (keywords) {

@@ -12,79 +12,72 @@ const MongoStore = require("connect-mongo")(session);  //session存储
 const config = require("config/config");
 const mongodb = require("config/mongodb");
 const routes = require("routes/index");
+var schedule = require('node-schedule');
 const ueditor = require("ueditor");
-const cors = require('cors'); // 
+const cors = require('cors');
 const app = express();
 const fs = require('fs');
 
 //连接数据库
 mongodb.connect();
-//翻页全局配置
 mongoosePaginate.paginate.options = {
-    limit: config.APP.LIMIT  // 设置限制查询数据
+  limit: config.APP.LIMIT
 }
 app.use(express.static(path.join(__dirname, "public")));
-
 app.use(cors());
-
-app.set("port", config.APP.PORT);  //设置端口
-app.use(bodyParser.json()); //限制传输数据大小
-app.use(bodyParser.urlencoded({ extended: true })); // 数据格式限制于数组和对象
+app.set("port", config.APP.PORT);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 let configJson = new String(fs.readFileSync(path.join(__dirname, 'public/nodejs/config.json')));
-
 app.use("/ueditor/ue", ueditor(path.join(__dirname, 'public'), function (req, res, next) {
-    var imgDir = '/upload' //默认上传地址为图片
-    var ActionType = req.query.action;
-    if (ActionType === 'uploadimage' || ActionType === 'uploadfile' || ActionType === 'uploadvideo') {
-        var file_url = imgDir;//默认上传地址为图片
-        /*其他上传格式的地址*/
-        if (ActionType === 'uploadfile') {
-            file_url = '/file/ueditor/'; //附件保存地址
-        }
-        if (ActionType === 'uploadvideo') {
-            file_url = '/video/ueditor/'; //视频保存地址
-        }
-        res.ue_up(file_url); //你只要输入要保存的地址 。保存操作交给ueditor来做
-        res.setHeader('Content-Type', 'text/html');
+  var imgDir = '/upload'
+  var ActionType = req.query.action;
+  if (ActionType === 'uploadimage' || ActionType === 'uploadfile' || ActionType === 'uploadvideo') {
+    var file_url = imgDir;
+    if (ActionType === 'uploadfile') {
+      file_url = '/file/ueditor/';
     }
-    //客户端发起图片列表请求
-    else if (ActionType === 'listimage') {
-        res.ue_list(imgDir); // 客户端会列出 dir_url 目录下的所有图片
+    if (ActionType === 'uploadvideo') {
+      file_url = '/video/ueditor/';
     }
-    // 客户端发起其它请求
-    else {
-        res.setHeader('Content-Type', 'application/json');
-        let callback = req.query.callback;
-        res.redirect('/ueditor/config?callback=' + callback)
-    }
+    res.ue_up(file_url);
+    res.setHeader('Content-Type', 'text/html');
+  }
+  else if (ActionType === 'listimage') {
+    res.ue_list(imgDir);
+  }
+  else {
+    res.setHeader('Content-Type', 'application/json');
+    let callback = req.query.callback;
+    res.redirect('/ueditor/config?callback=' + callback)
+  }
 }));
 
 app.use('/ueditor/config', function (req, res, next) {
-    res.setHeader('Content-Type', 'application/json');
-    let callback = req.query.callback;
-    res.write(callback + '(' + configJson + ')');
-    res.end();
+  res.setHeader('Content-Type', 'application/json');
+  let callback = req.query.callback;
+  res.write(callback + '(' + configJson + ')');
+  res.end();
 });
 
 //用于中间件的压缩，必须顶置；
 app.use(compression({
-    threshold: 1024 * 10  //限制大小为10240
+  threshold: 1024 * 10  
 }));
 
-app.use(session({  //session缓存 用于存储图片
-    resave: false,
-    saveUninitialized: true,
-    secret: config.SESSION.secret,
-    cookie: { maxAge: 5 * 60 * 1000 },      //设置过期时间3分钟
-    store: new MongoStore({
-        url: config.SESSION.db,
-        collection: 'sessions'
-    })
+app.use(session({  
+  resave: false,
+  saveUninitialized: true,
+  secret: config.SESSION.secret,
+  cookie: { domain: '192.168.0.150:4201',maxAge: 60 * 60 * 1000 },     
+  store: new MongoStore({
+    url: config.SESSION.db,
+    collection: 'sessions'
+  })
 }));
-
 routes(app);
 
 http.createServer(app).listen(app.get("port"), () => {
-    // gc.start();//开启垃圾回收机制
-    console.log(`NodePress Run! port as ${app.get('port')}`);
+  // gc.start();
+  console.log(`NodePress Run! port as ${app.get('port')}`);
 })

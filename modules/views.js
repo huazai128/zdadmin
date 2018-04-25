@@ -8,6 +8,7 @@ const ViewsSchema = new mongoose.Schema({
 
   // 测试者数量
   test:{type:Number,default: 110},
+
 })
 const Views = mongoose.model("Views",ViewsSchema)
 module.exports = Views; 

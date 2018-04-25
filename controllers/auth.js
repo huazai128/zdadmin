@@ -1,16 +1,27 @@
 const Auth = require("modules/auth");
+const Other = require("modules/other");
 const config = require("config/config");
 const crypto = require("crypto");
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
 const jwt = require('jsonwebtoken');
-const authCtrl = { list: {}, item: {}, other: {} };
+const authCtrl = { list: {}, item: {}, other: {}, forget: {} };
 
 const sha256 = (pwd) => {
   return crypto.createHmac("sha256", pwd).update(config.AUTH.defaultPassword).digest("hex");
 };
 
+const isCodeExp = (exp) => {
+  const decodedToken = jwt.verify(exp, config.AUTH.jwtTokenSecret);
+  if (decodedToken.exp > Math.floor(Date.now() / 1000)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // 注册用户
-authCtrl.other.POST = ({ body }, res) => {
+authCtrl.other.POST = (req, res) => {
+  const { body, session } = req;
   if (!body.email || !body.password || !body.confirm) {
     handleError({ res, message: "Email或者密码不为空" });
     return false;
@@ -22,36 +33,52 @@ authCtrl.other.POST = ({ body }, res) => {
     handleError({ res, message: "输入密码不一致" });
     return false;
   }
-  Auth.findOne({ email: body.email }).then((result) => {
-    if (result) {
-      handleError({ res, message: "Email已存在" });
-    } else {
-      postLogin(body);
-    }
-  })
   body.password = sha256(body.password);
-  postLogin = () => {
-    new Auth(body).save({ new: true })
-      .then((user) => {
-        const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24);
-        const token = jwt.sign({
-          data: config.AUTH.data,
-          exp: exp,
-        }, config.AUTH.jwtTokenSecret);
-        let query = {
-          gravatar: user.gravatar,
-          username: user.username,
-          _id: user._id,
-          email: user.email,
-          exp: exp,
-          token: token,
-          status: user.status
-        }
-        handleSuccess({ res, result: query, message: "注册成功" });
-      })
+  const authOpen = () => {
+    Auth.findOne({ email: body.email }).then((result) => {
+      if (result) {
+        handleError({ res, message: "Email已存在" });
+      } else {
+        postLogin(body);
+      }
+    })
+    const postLogin = () => {
+      new Auth(body).save({ new: true })
+        .then((user) => {
+          const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24);
+          const token = jwt.sign({
+            data: config.AUTH.data,
+            exp: exp,
+          }, config.AUTH.jwtTokenSecret);
+          let query = {
+            gravatar: user.gravatar,
+            username: user.username,
+            _id: user._id,
+            email: user.email,
+            exp: exp,
+            token: token,
+            status: user.status
+          }
+          handleSuccess({ res, result: query, message: "注册成功" });
+        })
+        .catch((err) => {
+          handleError({ res, message: "Email已存在", err });
+        })
+    }
+  }
+  if (body.exp && isCodeExp(body.exp)) {
+    Other.findOne({ exp: body.exp }).then((other) => {
+      if (other && Object.is(body.vcode.toUpperCase(), other.captcha.toUpperCase())) {
+        authOpen();
+      } else {
+        handleError({ res, message: "验证码错误" });
+      }
+    })
       .catch((err) => {
-        handleError({ res, message: "Email已存在", err });
+        handleError({ res, message: "验证码错误", err });
       })
+  } else {
+    authOpen();
   }
 }
 
@@ -59,45 +86,51 @@ authCtrl.other.POST = ({ body }, res) => {
 authCtrl.list.POST = ({ body }, res) => {
   Auth.find({ email: body.email })
     .then(([user]) => {
-      // if (body.type && !Object.is(user.type, body.type)) {
-      //   handleError({ res, message: "没有权限登录", err });
-      //   return flase;
-      // }
-      if (Object.is(sha256(body.password), user.password)) {
-        const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24);
-        const token = jwt.sign({ // 
-          data: config.AUTH.data,
-          exp: exp,
-        }, config.AUTH.jwtTokenSecret);
-        let query = {
-          gravatar: user.gravatar,
-          username: user.username,
-          _id: user._id,
-          email: user.email,
-          exp: exp,
-          token: token,
-          status: user.status
+      let arr = [1, 0, -1];
+      if (user && arr.includes(user.status)) {
+        if (Object.is(user.c_state, 0)) {
+          handleError({ res, message: "账号正在申请当中..." });
+          return false;
         }
-        handleSuccess({ res, message: "登陆成功", result: query });
+        if (Object.is(sha256(body.password), user.password)) {
+          const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24);
+          const token = jwt.sign({
+            data: config.AUTH.data,
+            exp: exp,
+          }, config.AUTH.jwtTokenSecret);
+          let query = {
+            gravatar: user.gravatar,
+            username: user.username,
+            _id: user._id,
+            email: user.email,
+            exp: exp,
+            token: token,
+            status: user.status
+          }
+          handleSuccess({ res, message: "登陆成功", result: query });
+        } else {
+          handleError({ res, message: "用户名不存在或密码错误" });
+        }
+      } else if (user) {
+        handleError({ res, message: "用户已被禁封" });
       } else {
-        handleError({ res, message: "用户名不存在或密码错误" });
+        handleError({ res, message: "用户不存在" });
       }
     })
     .catch((err) => {
-      let msg = body.type ? '用户不存在' : '登陆失败';
-      handleError({ res, message: msg, err });
+      handleError({ res, message: '登陆失败', err });
     })
 };
 
 // 获取所有用户数据
 authCtrl.list.GET = (req, res) => {
-  let { keywords, status, type, page, pre_page, proh, p_state } = req.query;
+  let { keywords, status, type, page, pre_page, proh, p_state, c_state } = req.query;
   let arr = [2, 1, 0, -1, -2]
   let options = {
     sort: { _id: -1 },
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: 'tags', // 关联查询
+    populate: 'tags',
     select: '-password'
   }
   let query = {};
@@ -120,6 +153,9 @@ authCtrl.list.GET = (req, res) => {
       { 'email': ketwordReg },
       { 'name': ketwordReg }
     ]
+  }
+  if (arr.includes(c_state)) {
+
   }
   Auth.paginate(query, options)
     .then((result) => {
@@ -177,7 +213,6 @@ authCtrl.item.PUT = ({ params: _id, body: auth }, res) => {
     query.password = sha256(auth.new_password);
     str = '修改密码';
   }
-  
   const updateUser = () => {
     Auth.findByIdAndUpdate(_id, { $set: Object.assign(auth, query) }, { new: true }).select("-password")
       .then((result) => {
@@ -190,7 +225,34 @@ authCtrl.item.PUT = ({ params: _id, body: auth }, res) => {
   updateUser();
 }
 
+authCtrl.forget.POST = ({ body: auth }, res) => {
+  if (!Object.is(auth.confirm_password, auth.new_password)) {
+    handleError({ res, message: '两次输入密码不一致' });
+    return false;
+  }
+  let parmas = {
+    name: auth.name,
+    email: auth.email,
+    card: auth.card,
+  }
+  Auth.findOne(parmas).then((user) => {
+    if (user) {
+      let pass = sha256(auth.new_password);
+      user.update({ $set: { password: pass } }, { new: true })
+        .then((result) => {
+          handleSuccess({ res, message: '重置密码成功', result });
+        })
+        .catch((err) => {
+          handleError({ res, message: '重置密码失败' });
+        })
+    } else {
+      handleError({ res, message: '当前用户不存在' });
+    }
+  })
+}
 
 exports.list = (req, res) => { handleRequest({ req, res, controller: authCtrl.list }) };
 exports.item = (req, res) => { handleRequest({ req, res, controller: authCtrl.item }) };
 exports.other = (req, res) => { handleRequest({ req, res, controller: authCtrl.other }) };
+exports.forget = (req, res) => { handleRequest({ req, res, controller: authCtrl.forget }) };
+

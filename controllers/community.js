@@ -1,10 +1,36 @@
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
 const Community = require("modules/community");
+const Comment = require("modules/comment");
 const Ky = require("modules/ky");
+const async = require("async");
 const comCtrl = {
   list: {},
-  item: {}
+  item: {},
+  other: {},
+  count: {},
 }
+
+const getCommunityList = (res, query, options) => {
+  Community.paginate(query, options).then((result) => {
+    handleSuccess({
+      res,
+      message: "获取数据成功",
+      result: {
+        data: result.docs,
+        pagination: {
+          total: result.total, 
+          current_page: result.page,
+          total_page: result.pages, 
+          pre_page: result.limit 
+        }
+      }
+    })
+  })
+    .catch((error) => {
+      handleError({ res, message: "查询失败", error })
+    })
+}
+
 
 // 保存
 comCtrl.list.POST = ({ body: community }, res) => {
@@ -27,7 +53,7 @@ comCtrl.list.POST = ({ body: community }, res) => {
 
 // 获取所有数据
 comCtrl.list.GET = (req, res) => {
-  const { keywords, page, pre_page, state, choice, recommend, sort, user_id } = req.query;
+  const { keywords, page, pre_page, state, choice, recommend, sort, user_id, c_user } = req.query;
   const arr = [0, 1, -1];
   let sortQuery = {};
   if (sort) {
@@ -40,7 +66,7 @@ comCtrl.list.GET = (req, res) => {
     sort: sortQuery,
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: 'userId', // 关联查询
+    populate: 'userId', 
   }
   let query = {};
   if (keywords) {
@@ -62,24 +88,11 @@ comCtrl.list.GET = (req, res) => {
   if (user_id) {
     query.userId = user_id;
   }
-  Community.paginate(query, options).then((result) => {
-    handleSuccess({
-      res,
-      message: "获取数据成功",
-      result: {
-        data: result.docs,
-        pagination: {
-          total: result.total, // 文章总数
-          current_page: result.page, //  当前页面
-          total_page: result.pages, // 总分页
-          pre_page: result.limit //  限制查询条数
-        }
-      }
-    })
-  })
-    .catch((error) => {
-      handleError({ res, message: "查询失败", error })
-    })
+  if (c_user) {
+    query.c_user = { $in: [c_user] };
+    delete query.userId;
+  }
+  getCommunityList(res, query, options);
 }
 
 // 批量修改
@@ -103,10 +116,10 @@ comCtrl.item.PUT = ({ params: _id, body: community }, res) => {
   let query = {};
   let str = '设置'
   if (choice !== undefined) {
-    query['$set'] = { 'choice':choice };
+    query['$set'] = { 'choice': choice };
   }
   if (recommend !== undefined) {
-    query['$set'] = { 'recommend':recommend };
+    query['$set'] = { 'recommend': recommend };
   }
   const putCommunityId = () => {
     Community.findByIdAndUpdate(_id, query, { new: true })
@@ -140,7 +153,6 @@ comCtrl.item.PUT = ({ params: _id, body: community }, res) => {
   } else {
     putCommunityId();
   }
-
 }
 
 // 获取单个数据
@@ -178,6 +190,64 @@ comCtrl.item.GET = ({ params: { _id } }, res) => {
   }
 }
 
+// 回帖
+comCtrl.other.GET = (req, res) => {
+  const { page, pre_page, state, sort, user_id } = req.query;
+  let arr = [1, 0, -1];
+  let options = {
+    sort: { id: -1 },
+    limit: Number(pre_page || 10),
+    page: Number(page || 1),
+    populate: 'userId',
+  }
+  let query = {};
+  if (arr.includes(Number(state))) {
+    query.state = state;
+  }
+  Comment.distinct('post_id', { user_id: user_id }).then((ids) => {
+    query.id = { '$in': [...ids] };
+    getCommunityList(res, query, options);
+  })
+    .catch((err) => {
+      handleError({ res, message: "获取数据失败", err })
+    })
+}
+
+// 统计数据
+comCtrl.count.GET = (req,res) => {
+  let query = {
+    state: 1
+  }
+  async.parallel([
+    function(callback){
+      Comment.count(query).then((count) => {
+        callback(null,count);
+      })
+      .catch((err) => {
+        callback(err);
+      })
+    },
+    function(callback) {
+      Community.count(query).then((count) => {
+        callback(null,count);
+      })
+      .catch((err) => {
+        callback(err);
+      })
+    }
+  ],(err,result) => {
+    if(!err){
+      handleSuccess({ res, message: "获取成功", result });
+    }
+    else{
+      handleError({ res, message: "获取失败", err })
+    }
+  })
+}
+
+
 exports.list = (req, res) => { handleRequest({ req, res, controller: comCtrl.list }) }
 exports.item = (req, res) => { handleRequest({ req, res, controller: comCtrl.item }) }
+exports.other = (req, res) => { handleRequest({ req, res, controller: comCtrl.other }) }
+exports.count = (req, res) => { handleRequest({ req, res, controller: comCtrl.count }) }
 

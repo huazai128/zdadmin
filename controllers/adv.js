@@ -1,8 +1,3 @@
-/**
- * 
- * 公告位控制器
- * 
- */
 const authIsVerified = require("utils/auth");
 const Adv = require("modules/adv");
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
@@ -25,25 +20,20 @@ advCtrl.list.POST = ({ body: adv }, res) => {
 
 // 获取所有的广告位
 advCtrl.list.GET = (req, res) => {
-  // 查询参数
   let { keywords, state, pre_page, page, sort } = req.query;
   const arr = ['0', '1', '-1'];
-  // 过滤条件
   let options = {
-    sort: { sort: 1 }, // 根据sort 排序查询
-    limit: Number(pre_page || 10), // 限制查询题哦数
-    page: Number(page || 1), //当前页码
+    sort: { sort: 1 }, 
+    limit: Number(pre_page || 10), 
+    page: Number(page || 1), 
   }
   let query = {};
-
-  // 判断keyword 
   if (keywords) {
     const ketwordReg = new RegExp(keywords);
     query["$or"] = [ 
       { 'title': ketwordReg },
     ]
   }
-  // 按照state查询
   if (arr.includes(state)) {
     query.state = state;
   }
@@ -55,10 +45,10 @@ advCtrl.list.GET = (req, res) => {
         result: {
           data: advs.docs,
           pagination: {
-            total: advs.total, // 文章总数
-            current_page: advs.page, //  当前页面
-            total_page: advs.pages, // 总分页
-            pre_page: advs.limit //  限制查询条数
+            total: advs.total, 
+            current_page: advs.page,
+            total_page: advs.pages, 
+            pre_page: advs.limit
           }
         }
       })
@@ -70,7 +60,7 @@ advCtrl.list.GET = (req, res) => {
 
 // 根据广告位id获取数据
 advCtrl.item.GET = ({ params: { _id } }, res) => {
-  const isFindById = Object.is(Number(_id), NaN);  // 判断_id还是id,_id为true，id为false;
+  const isFindById = Object.is(Number(_id), NaN);  
   (isFindById ?
     Adv.findById({ _id: _id }).select('-meta -create_at -update_at') :
     Adv.findOne({ id: _id, state: 1 }).exec())

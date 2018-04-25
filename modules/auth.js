@@ -21,7 +21,7 @@ const authSchema = new mongoose.Schema({
     // 状态 1:正常 0: 禁言 默认禁言一小时 -1:禁言其他 -2：禁用 -3：删除
     status: { type: Number, required: true, default: 1 },
 
-    // 用户类型 0:普通用户 1:测试开发用户, 2：后台管理员 3:超级管理员
+    // 用户类型 0:普通用户 1:测试开发用户
     type: { type: Number, required: true, default: 0 },
 
     // 真实姓名
@@ -54,17 +54,17 @@ const authSchema = new mongoose.Schema({
     // 禁言时间名称
     time_name: { type: String },
 
-    // 权限状态 admin: 超级会员
-    // state:{ type:String }
+    // 审核状态 1：通过审核 0 待审核
+    c_state:{ type: Number, required: true, default: 0 }
 
 });
 
-authSchema.plugin(mongoosePaginate);// 添加mongoose分页插件
-authSchema.plugin(autoIncrement.plugin, { //自增ID插件配置
-    model: 'Auth', //插入到Article集合中
-    field: 'id', //字段为id
-    startAt: 1, //开始址
-    incrementBy: 1  //每次加
+authSchema.plugin(mongoosePaginate);
+authSchema.plugin(autoIncrement.plugin, { 
+    model: 'Auth',
+    field: 'id', 
+    startAt: 1, 
+    incrementBy: 1  
 })
 
 //更新

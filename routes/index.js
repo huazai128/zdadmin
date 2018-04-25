@@ -29,14 +29,15 @@ const routes = (app) => {
         // 排除auth的post请求 && 评论的post请求 && like请求
         const isLike = Object.is(req.url, '/apply') && Object.is(req.method, 'POST');
         const isPostAuth = Object.is(req.url, '/auth') && Object.is(req.method, 'POST');
+        const isForgetAuth = Object.is(req.url, '/forget') && Object.is(req.method, 'POST');
         const isPostAccount = Object.is(req.url, '/account') && Object.is(req.method, 'POST');
         const isPostUser = Object.is(req.url, '/user') && Object.is(req.method, 'POST');
         const isPostComment = Object.is(req.url, '/comment') && Object.is(req.method, 'POST');
-        if (isLike || isPostAuth || isPostComment || isPostUser || isPostAccount) {
+        if (isLike || isPostAuth || isPostComment || isPostUser || isPostAccount || isForgetAuth) {
             next();
             return false;
         };
-        // 验证验证不是GET请求和登录验证就返回
+        // 验证不是GET请求和登录验证就返回
         if (!authIsVerified(req) && !Object.is(req.method, "GET")) {
             res.status(401).jsonp({ code: 0, message: "长的太丑了，不见！！！" });
             return false;
@@ -53,6 +54,7 @@ const routes = (app) => {
     app.all("/auth", controllers.auth.list);
     app.all("/auth/:_id", controllers.auth.item);
     app.all("/user", controllers.auth.other);
+    app.all("/forget", controllers.auth.forget);
 
     // 图片上传
     app.all('/image', controllers.image.list);
@@ -80,6 +82,8 @@ const routes = (app) => {
     // 社区管理
     app.all("/community", controllers.community.list);
     app.all("/community/:_id", controllers.community.item);
+    app.all("/replies",controllers.community.other);
+    app.all("/count",controllers.community.count);
 
     // 关键字管理
     app.all("/ky", controllers.ky.list);
@@ -102,6 +106,9 @@ const routes = (app) => {
     app.all("/account", controllers.user.list);
     app.all("/account/:_id", controllers.user.item);
     app.all("/account_post", controllers.user.other);
+
+    // 验证码
+    app.all("/code",controllers.other.list);
 
     app.all("*", (req, res) => {
         res.status(404).jsonp({

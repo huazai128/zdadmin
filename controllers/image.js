@@ -36,6 +36,7 @@ imageCtrl.list.POST = (req, res) => {
       }
       if (req.file && req.file.filename) {
         params.url = req.file.filename;
+        params.p_url = "/upload/" + req.file.filename;
       }
       new Image(Object.assign(params, req.body)).save()
         .then((image) => {
@@ -50,14 +51,17 @@ imageCtrl.list.POST = (req, res) => {
         })
     }
     if (id) {
-      let params = Object.assign({ url: req.file.filename }, req.body);
+      let query = {}
+      query.url = req.file.filename;
+      query.p_url = "/upload/" + req.file.filename;
+      let params = Object.assign(query, req.body);
       delete params.state;
       Image.findByIdAndUpdate({ _id: id }, { $set: params }, { new: true })
         .then((result) => {
-          handleSuccess({ res, message: "文章修改成功", result });
+          handleSuccess({ res, message: "文件修改成功", result });
         })
         .catch((err) => {
-          handleError({ res, message: "文章修改失败" }, err);
+          handleError({ res, message: "文件修改失败" }, err);
         })
     } else {
       addFile();
@@ -67,8 +71,12 @@ imageCtrl.list.POST = (req, res) => {
 
 // apply_id 获取文件
 imageCtrl.list.GET = (req, res) => {
-  const { apply_id } = req.query;
-  Image.find({ apply_id: apply_id }).select("url state _id process")
+  const { apply_id, p_type } = req.query;
+  let sel = '';
+  if (!p_type) {
+    sel = 'url state _id process p_url';
+  }
+  Image.find({ apply_id: apply_id }).select(sel)
     .then((result) => {
       handleSuccess({ res, result: { data: result }, message: '获取数据成功' });
     })
@@ -83,23 +91,33 @@ imageCtrl.item.PUT = ({ params: _id, body: image }, res) => {
     handleError({ res, message: "缺少必要参数" });
     return false;
   }
+  let query = {};
+  if (image.remove) {
+    query['$set'] = { url: '', p_url: '', state: Number(image.state) };
+  } else {
+    query['$set'] = { state: Number(image.state) };
+  }
   const reviseApplyId = () => {
-    !!Number(image.state) && image.process ;
+    !!Number(image.state) && image.process;
     !Number(image.state) && (image.process -= 1);
-    Apply.findByIdAndUpdate({ _id: image.apply_id }, { $set: { process: image.process} }, { new: true })
+    Apply.findByIdAndUpdate({ _id: image.apply_id }, { $set: { process: image.process } }, { new: true })
       .then((result) => {
-        console.log("设置成功")
+        handleSuccess({ res, message: "设置成功", result });
       })
       .catch((err) => {
-        console.log(err);
+        handleError({ res, message: "设置失败" }, err);
       })
   }
-  Image.findByIdAndUpdate(_id, { $set: { state: Number(image.state) } }, { new: true })
+  Image.findByIdAndUpdate(_id, query, { new: true })
     .then((result) => {
-      reviseApplyId();
-      handleSuccess({ res, message: "设置成功", result });
+      if (!image.remove) {
+        reviseApplyId();
+      } else {
+        handleSuccess({ res, message: "设置成功", result });
+      }
     })
     .catch((err) => {
+      console.log(err);
       handleError({ res, message: "设置失败" }, err);
     })
 }
