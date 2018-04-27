@@ -1,0 +1,14 @@
+开发环境： 
+后台
+http://192.168.0.39:8000/#/login    账号：13611111111 密码：1
+米格尔前台PC
+http://miguel.fongwell.com
+米格尔前台移动端
+http://192.168.0.15:3002/shop
+米格尔CRM网站
+http://h5.miguel.fongwell.com/official/news
+
+https://www.tapd.cn/
+
+地址：https://exmail.qq.com/login
+邮箱： leirenkaii@fongwell.com  Asdf123

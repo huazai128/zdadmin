@@ -45,6 +45,10 @@ userCtrl.other.POST = ({ body }, res) => {
 userCtrl.list.POST = ({ body }, res) => {
   User.find({ email: body.email })
     .then(([user]) => {
+      if (user && !user.status) {
+        handleError({ res, message: "用户或密码错误" });
+        return false;
+      }
       if (Object.is(sha256(body.password), user.password)) {
         const exp = Math.floor(Date.now() / 1000) + (60 * 60 * 24);
         const token = jwt.sign({ // 
@@ -62,11 +66,11 @@ userCtrl.list.POST = ({ body }, res) => {
         }
         handleSuccess({ res, message: "登陆成功", result: query });
       } else {
-        handleError({ res, message: "" });
+        handleError({ res, message: "用户或密码错误" });
       }
     })
     .catch((err) => {
-      let msg = body.type ? '用户不存在' : '登陆失败';
+      let msg = '用户或密码错误';
       handleError({ res, message: msg, err });
     })
 };
@@ -79,7 +83,7 @@ userCtrl.list.GET = (req, res) => {
     sort: { _id: -1 },
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: 'tags', 
+    populate: 'tags',
   }
   let query = {};
   if (arr.includes(Number(status))) {
@@ -123,6 +127,7 @@ userCtrl.item.PUT = ({ params: _id, body: auth }, res) => {
   }
   if (auth.power) {
     auth.power = auth.power.split("");
+    query.password = sha256(auth.password);
   }
   User.findByIdAndUpdate(_id, { $set: Object.assign(auth, query) }, { new: true }).select("-password")
     .then((result) => {

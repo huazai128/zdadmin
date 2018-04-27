@@ -55,7 +55,7 @@ const authSchema = new mongoose.Schema({
     time_name: { type: String },
 
     // 审核状态 1：通过审核 0 待审核
-    c_state:{ type: Number, required: true, default: 0 }
+    c_state:{ type: Number, required: true, default: 1 }
 
 });
 

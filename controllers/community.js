@@ -1,6 +1,7 @@
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
 const Community = require("modules/community");
 const Comment = require("modules/comment");
+const Auth = require("modules/auth");
 const Ky = require("modules/ky");
 const async = require("async");
 const comCtrl = {
@@ -10,21 +11,38 @@ const comCtrl = {
   count: {},
 }
 
-const getCommunityList = (res, query, options) => {
-  Community.paginate(query, options).then((result) => {
+const getKyCheck = (res, result) => {
+  Ky.find({ state: 0 }).select("name").then((data) => {
+    if (data.length) {
+      data.forEach((item) => {
+        result.docs.forEach((list) => {
+          list.title = list.title.replace(new RegExp(item.name, "gm"), "****");
+          list.content = list.content.replace(new RegExp(item.name, "gm"), "****");
+        })
+      })
+    }
     handleSuccess({
       res,
       message: "获取数据成功",
       result: {
         data: result.docs,
         pagination: {
-          total: result.total, 
+          total: result.total,
           current_page: result.page,
-          total_page: result.pages, 
-          pre_page: result.limit 
+          total_page: result.pages,
+          pre_page: result.limit
         }
       }
     })
+  })
+    .catch((err) => {
+      handleError({ res, message: "获取文章失败", err })
+    })
+}
+
+const getCommunityList = (res, query, options) => {
+  Community.paginate(query, options).then((result) => {
+    getKyCheck(res, result);
   })
     .catch((error) => {
       handleError({ res, message: "查询失败", error })
@@ -42,11 +60,24 @@ comCtrl.list.POST = ({ body: community }, res) => {
     handleError({ res, message: "请先登录!" });
     return false;
   }
-  new Community(community).save()
-    .then((result) => {
-      handleSuccess({ res, result, message: "发表成功" });
+  const postCommunity = () => {
+    new Community(community).save()
+      .then((result) => {
+        handleSuccess({ res, result, message: "发表成功" });
+      })
+      .catch(() => {
+        handleError({ res, err, message: "发表失败" });
+      })
+  }
+  Auth.findById({ _id: community.userId })
+    .then((user) => {
+      if (Object.is(user.status, 1)) {
+        postCommunity();
+      } else {
+        handleError({ res, message: `已被${user.time_name}` });
+      }
     })
-    .catch(() => {
+    .catch((err) => {
       handleError({ res, err, message: "发表失败" });
     })
 }
@@ -57,7 +88,7 @@ comCtrl.list.GET = (req, res) => {
   const arr = [0, 1, -1];
   let sortQuery = {};
   if (sort) {
-    (sort === "1") && (sortQuery = { news_at: -1 });
+    (sort === "1") && (sortQuery = { news_at: -1, create_at: -1 });
     (sort === "2") && (sortQuery = { _id: -1 });
   } else {
     sortQuery = { choice: -1, recommend: -1, state: -1, _id: -1 }
@@ -66,7 +97,7 @@ comCtrl.list.GET = (req, res) => {
     sort: sortQuery,
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: 'userId', 
+    populate: 'userId',
   }
   let query = {};
   if (keywords) {
@@ -161,7 +192,7 @@ comCtrl.item.GET = ({ params: { _id } }, res) => {
   (isById ?
     Community.findById({ _id: _id }) :
     Community.findOne({ id: _id, state: 1 })
-  )
+  ).populate("userId")
     .then((result) => {
       if (!isById) {
         result.meta.links += 1;
@@ -214,32 +245,32 @@ comCtrl.other.GET = (req, res) => {
 }
 
 // 统计数据
-comCtrl.count.GET = (req,res) => {
+comCtrl.count.GET = (req, res) => {
   let query = {
     state: 1
   }
   async.parallel([
-    function(callback){
+    function (callback) {
       Comment.count(query).then((count) => {
-        callback(null,count);
+        callback(null, count);
       })
-      .catch((err) => {
-        callback(err);
-      })
+        .catch((err) => {
+          callback(err);
+        })
     },
-    function(callback) {
+    function (callback) {
       Community.count(query).then((count) => {
-        callback(null,count);
+        callback(null, count);
       })
-      .catch((err) => {
-        callback(err);
-      })
+        .catch((err) => {
+          callback(err);
+        })
     }
-  ],(err,result) => {
-    if(!err){
+  ], (err, result) => {
+    if (!err) {
       handleSuccess({ res, message: "获取成功", result });
     }
-    else{
+    else {
       handleError({ res, message: "获取失败", err })
     }
   })

@@ -29,6 +29,7 @@ imageCtrl.list.POST = (req, res) => {
   // bg 为字段
   upload.single("bg")(req, res, (err) => {
     const { id, process } = req.query;
+    const image = req.body;
     const addFile = () => {
       let params = {};
       if (process) {
@@ -38,13 +39,26 @@ imageCtrl.list.POST = (req, res) => {
         params.url = req.file.filename;
         params.p_url = "/upload/" + req.file.filename;
       }
-      new Image(Object.assign(params, req.body)).save()
+      const reviseApplyId = () => {
+        Apply.findByIdAndUpdate({ _id: image.apply_id }, { $set: { process: process } }, { new: true })
+          .then((result) => {
+            handleSuccess({ res, message: "设置成功", result });
+          })
+          .catch((err) => {
+            handleError({ res, message: "设置失败" }, err);
+          })
+      }
+      new Image(Object.assign(req.body,params)).save()
         .then((image) => {
           let result = {};
-          if (req.file.filename) {
+          if (req.file && req.file.filename) {
             result.path = "/upload/" + req.file.filename;
           }
-          handleSuccess({ res, result, message: '上传成功' });
+          if (image.apply_id) {
+            reviseApplyId();
+          }else{
+            handleSuccess({ res, result, message: '上传成功' });
+          }
         })
         .catch((err) => {
           handleError({ res, message: "上传失败", err })
@@ -53,6 +67,7 @@ imageCtrl.list.POST = (req, res) => {
     if (id) {
       let query = {}
       query.url = req.file.filename;
+      query.process = process;
       query.p_url = "/upload/" + req.file.filename;
       let params = Object.assign(query, req.body);
       delete params.state;
@@ -117,7 +132,6 @@ imageCtrl.item.PUT = ({ params: _id, body: image }, res) => {
       }
     })
     .catch((err) => {
-      console.log(err);
       handleError({ res, message: "设置失败" }, err);
     })
 }

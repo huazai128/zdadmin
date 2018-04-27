@@ -78,6 +78,5 @@ app.use(session({
 routes(app);
 
 http.createServer(app).listen(app.get("port"), () => {
-  // gc.start();
-  console.log(`NodePress Run! port as ${app.get('port')}`);
+  console.log(`连接 ${app.get('port')}`);
 })

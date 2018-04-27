@@ -13,28 +13,33 @@ viewsCtrl.GET = ({ query: { amount } }, res) => {
 
 const scheduleAmountRule = () => {
   var rule = new schedule.RecurrenceRule();
-  rule.minute = 0;
+  let arr = Array.from({ length: 24 }, (item, index) => index);
+  rule.hour = arr;
   schedule.scheduleJob(rule, function () {
     Views.findOne({}).then((views) => {
       views.amount = Number(views.amount) + Number((Math.random() * 5 + 1).toFixed(0));
       views.vip = Number(views.vip) + 1;
-      views.save({ new: true }).then((result) => {
-      }).catch((err) => {
-      })
+      views.save({ new: true })
+        .then((result) => {
+        })
+        .catch((err) => {
+        })
     })
   });
 }
 
 const scheduleTestRule = () => {
   var rule = new schedule.RecurrenceRule();
-  rule.hour = [0,7,14,21];
+  rule.hour = [0, 7, 14, 21];
   schedule.scheduleJob(rule, function () {
     Views.findOne({}).then((views) => {
       test = views.test || 110;
       views.test = Number(test) + 1;
-      views.save({ new: true }).then((result) => {
-      }).catch((err) => {
-      })
+      views.save({ new: true })
+        .then((result) => {
+        })
+        .catch((err) => {
+        })
     })
   });
 }

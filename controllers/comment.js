@@ -1,4 +1,5 @@
 const Comment = require("modules/comment");
+const Auth = require("modules/auth");
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
 const Community = require("modules/community");
 const Ky = require("modules/ky");
@@ -14,7 +15,7 @@ const updateCommunityCommentCount = (post_ids = []) => {
     ])
       .then((counts) => {
         if (counts.length === 0) {
-          Community.update({ id: post_ids[0] }, { $set: { 'meta.comments': 0 } })
+          Community.update({ id: post_ids[0] }, { $set: { 'meta.comments': 0, news_at: new Date() } })
             .then((info) => {
               console.log('评论聚合更新成功', info);
             })
@@ -23,7 +24,7 @@ const updateCommunityCommentCount = (post_ids = []) => {
             })
         } else {
           counts.forEach((count) => {
-            Community.update({ id: count._id }, { $set: { 'meta.comments': count.num_tutorial } })
+            Community.update({ id: count._id }, { $set: { 'meta.comments': count.num_tutorial, news_at: new Date() } })
               .then((info) => {
                 console.log('评论聚合更新成功', info);
               })
@@ -60,17 +61,30 @@ commentCtrl.list.POST = ({ body: comment }, res) => {
       })
   }
   // 查找所有关键字
-  Ky.find({ state: 0 }).select("name")
-    .then((result) => {
-      if (result.length) {
-        let arr = result.filter((item) => eval(`/${item.name}/ig`).test(comment.content));
-        if (!!arr.length) {
-          handleError({ res, message: '内容不合法' });
+  const getKyCheck = () => {
+    Ky.find({ state: 0 }).select("name")
+      .then((result) => {
+        if (result.length) {
+          let arr = result.filter((item) => eval(`/${item.name}/ig`).test(comment.content));
+          if (!!arr.length) {
+            handleError({ res, message: '内容不合法' });
+          } else {
+            saveComment();
+          }
         } else {
           saveComment();
         }
+      })
+      .catch((err) => {
+        handleError({ res, err, message: '评论失败' });
+      })
+  }
+  Auth.findById({ _id: comment.user_id })
+    .then((user) => {
+      if (Object.is(user.status, 1)) {
+        getKyCheck();
       } else {
-        saveComment();
+        handleError({ res, message: `已被${user.time_name}` });
       }
     })
     .catch((err) => {

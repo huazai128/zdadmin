@@ -37,7 +37,7 @@ const applySchema = new mongoose.Schema({
   update_at: { type: Date },
 
   // 状态 0: 待审核 1：已审核 -1： 不通过 -2：删除
-  state: { type: Number, default: 0 },
+  state: { type: Number, default: 1 },
 
   // 用户 申请用户id
   user: { type: ObjectId, ref: "Auth" },
@@ -56,7 +56,7 @@ const applySchema = new mongoose.Schema({
 
   // 众测品台派单状态 0：派单中 1：完成派单
   p_state:{ type: Number, default: 0 }, 
-  
+
 });
 
 applySchema.set("toObject", { getters: true });

@@ -16,21 +16,22 @@ applyCtrl.list.POST = ({ body: apply, body: { mold, company, name, job, phone, e
       handleSuccess({ res, message: "申请成功", result });
     })
     .catch((err) => {
-      console.log(err);
       handleError({ res, message: "申请失败", err });
     })
 }
 
 // 获取数据
 applyCtrl.list.GET = (req, res) => {
-  const { keywords, page, pre_page, state, start, end, mold, style = 0,user,p_user } = req.query;
+  const { keywords, page, pre_page, state, start, end, mold, style = 0, user, p_user } = req.query;
   const arr = [0, 1, -1, -2];
   let options = {
     sort: { id: -1 },
     limit: Number(pre_page || 10),
     page: Number(page || 1),
-    populate: [{ path: 'user', select: "username name _id email" },
-    { path: "p_user", select: "username name _id email company job record iphone" }],
+    populate: [
+      { path: 'user', select: "username name _id email" },
+      { path: "p_user", select: "username name _id email company job record iphone" }
+    ],
   }
   let query = {}
   if (arr.includes(Number(state))) {
@@ -39,10 +40,10 @@ applyCtrl.list.GET = (req, res) => {
   if (mold) {
     query.mold = mold;
   }
-  if(user){
+  if (user) {
     query.user = user;
   }
-  if(p_user){
+  if (p_user) {
     query.p_user = p_user;
   }
   if (keywords) {
@@ -111,9 +112,6 @@ applyCtrl.item.GET = ({ params: { _id } }, res) => {
     Apply.findOne({ id: Number(_id) })
   )
     .then((result) => {
-      if(isFindById){
-
-      }
       handleSuccess({ res, message: "文章获取成功", result });
     })
     .catch((err) => {
@@ -131,8 +129,8 @@ applyCtrl.item.PUT = ({ params: _id, body: apply, }, res) => {
       return false;
     }
     query = apply;
-  }else{
-    query = { $set:apply };
+  } else {
+    query = { $set: apply };
   }
   Apply.findByIdAndUpdate(_id, query, { new: true })
     .then((result) => {
