@@ -2,7 +2,6 @@ const Apply = require("modules/apply");
 const { handleRequest, handleError, handleSuccess } = require("utils/handle");
 const applyCtrl = { list: {}, item: {}, excel: {} };
 const nodeExcel = require('excel-export');
-const disableLayout = { layout: false };
 const moment = require("moment");
 
 // 保存
@@ -47,6 +46,7 @@ applyCtrl.list.GET = (req, res) => {
     query.p_user = p_user;
   }
   if (keywords) {
+    console.log(keywords)
     const ketwordReg = new RegExp(keywords);
     query["$or"] = [
       { 'company': ketwordReg },
@@ -143,71 +143,90 @@ applyCtrl.item.PUT = ({ params: _id, body: apply, }, res) => {
 
 
 applyCtrl.excel.GET = (req, res) => {
-  let { ids, style = 0 } = req.query;
-  // if (!ids.length) {
-  //   handleError({ res, message: "缺少参数", err })
-  //   return false;
-  // }
-  const getApplys = () => {
-    let query = {};
-    // if (ids.length) {
-    //   query._id = { "$in": ids.split(',') }
-    // }
-    // if (style !== '') {
-    //   query.style = style;
-    // }
-    Apply.find(query)
-      .then((result) => {
-        let arr = [];
-        let conf = {}
-        conf.name = style === 0 ? "测试申请数据" : "众测平台数据";
-        conf.cols = [{
-          caption: 'string',
-          type: 'string',
-          beforeCellWrite: function (row, cellData) {
-            return cellData.toUpperCase();
-          },
-          width: 28.7109375
-        }, {
-          caption: 'date',
-          type: 'date',
-          beforeCellWrite: function () {
-            var originDate = new Date(Date.UTC(1899, 11, 30));
-            return function (row, cellData, eOpt) {
-              if (eOpt.rowNum % 2) {
-                eOpt.styleIndex = 1;
-              }
-              else {
-                eOpt.styleIndex = 2;
-              }
-              if (cellData === null) {
-                eOpt.cellType = 'string';
-                return 'N/A';
-              } else
-                return (cellData - originDate) / (24 * 60 * 60 * 1000);
-            }
-          }()
-        }, {
-          caption: 'bool',
-          type: 'bool'
-        }, {
-          caption: 'number',
-          type: 'number'
-        }];
-        conf.rows = [
-          ['pi', new Date(Date.UTC(2013, 4, 1)), true, 3.14],
-          ["e", new Date(2012, 4, 1), false, 2.7182],
-          ["M&M<>'", new Date(Date.UTC(2013, 6, 9)), false, 1.61803],
-          ["null date", null, true, 1.414]
-        ];
-        var data = nodeExcel.execute(conf);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats');
-        res.setHeader("Content-Disposition", "attachment; filename=" + "Report.xlsx");
-        res.end(data, 'binary');
-
-      })
+  let { ids, style } = req.query;
+  if (!ids.length) {
+    handleError({ res, message: "缺少参数", err })
+    return false;
   }
-  getApplys();
+  let query = {};
+  if (ids.length) {
+    query._id = { "$in": ids.split(',') }
+  }
+  if (style !== '') {
+    query.style = style;
+  }
+  Apply.find(query).select('mold company name job phone email qq content create_at').sort({ _id: -1 })
+    .then((result) => {
+      let arr = []
+      result.forEach((item) => {
+        let obj = {
+          mold: !item.mold ? '功能测试' : '兼容测试',
+          content: item.content,
+          company: item.company,
+          name: item.name,
+          job: item.job,
+          phone: item.phone,
+          email: item.email,
+          qq: item.qq,
+          create_at:moment(item.create_at).format("YYYY-MM-DD HH:mm:ss")
+        };
+        arr.push(Object.values(obj));
+      })
+      var conf = {};
+      conf.name = "mysheet";
+      conf.cols = [
+        {
+          caption: '测试类型',
+          type: 'string',
+          width: 40
+        },
+        {
+          caption: '咨询内容',
+          type: 'string',
+          width: 160
+        },
+        {
+          caption: '公司名称',
+          type: 'string',
+          width: 60
+        },
+        {
+          caption: '联系人',
+          type: 'string',
+          width: 40
+        },
+        {
+          caption: '职位',
+          type: 'string',
+          width: 120
+        },
+        {
+          caption: '手机号',
+          type: 'string',
+          width: 80
+        },
+        {
+          caption: '邮箱',
+          type: 'string',
+          width: 60
+        },
+        {
+          caption: 'QQ',
+          type: 'string',
+          width: 50
+        },
+        {
+          caption: '申请时间',
+          type: 'string',
+          width: 50
+        },
+      ];
+      conf.rows = arr;
+      var result = nodeExcel.execute(conf);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats');
+      res.setHeader("Content-Disposition", "attachment; filename=" + "Report.xlsx");
+      res.end(result, 'binary');
+    })
 }
 
 exports.list = (req, res) => { handleRequest({ req, res, controller: applyCtrl.list }) };

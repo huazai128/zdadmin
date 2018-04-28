@@ -11,7 +11,7 @@ const sha256 = (pwd) => {
 
 // 注册用户
 userCtrl.other.POST = ({ body }, res) => {
-  if (!body.email || !body.password || !body.username) {
+  if (!body.email || !body.password || !body.username || !body.password.trim() || !body.username.trim()) {
     handleError({ res, message: "Email或者密码不为空" });
     return false;
   }
@@ -45,8 +45,8 @@ userCtrl.other.POST = ({ body }, res) => {
 userCtrl.list.POST = ({ body }, res) => {
   User.find({ email: body.email })
     .then(([user]) => {
-      if (user && !user.status) {
-        handleError({ res, message: "用户或密码错误" });
+      if (user && !user.status || !user.enable) {
+        handleError({ res, message: "用户或密码错误或者已被禁用" });
         return false;
       }
       if (Object.is(sha256(body.password), user.password)) {
@@ -62,7 +62,8 @@ userCtrl.list.POST = ({ body }, res) => {
           email: user.email,
           exp: exp,
           token: token,
-          status: user.status
+          status: user.status,
+          power: user.power
         }
         handleSuccess({ res, message: "登陆成功", result: query });
       } else {

@@ -9,7 +9,6 @@ const path = require("path");
 const multer = require("multer");
 const Apply = require("modules/apply");
 
-
 // 图片以及文件上传配置
 let storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -26,9 +25,9 @@ let upload = multer({
 
 // 图片以及文件上传配置
 imageCtrl.list.POST = (req, res) => {
-  // bg 为字段
+  // bg 为name属性
   upload.single("bg")(req, res, (err) => {
-    const { id, process } = req.query;
+    const { id, process,state } = req.query;
     const image = req.body;
     const addFile = () => {
       let params = {};
@@ -40,7 +39,7 @@ imageCtrl.list.POST = (req, res) => {
         params.p_url = "/upload/" + req.file.filename;
       }
       const reviseApplyId = () => {
-        Apply.findByIdAndUpdate({ _id: image.apply_id }, { $set: { process: process } }, { new: true })
+        Apply.findByIdAndUpdate({ _id: image.apply_id }, { $set: { process: req.body.process } }, { new: true })
           .then((result) => {
             handleSuccess({ res, message: "设置成功", result });
           })
@@ -69,8 +68,11 @@ imageCtrl.list.POST = (req, res) => {
       query.url = req.file.filename;
       query.process = process;
       query.p_url = "/upload/" + req.file.filename;
-      let params = Object.assign(query, req.body);
+      let params = Object.assign(req.body,query);
       delete params.state;
+      if(Object.is(Number(state),-1)){
+        params.state = 1;
+      }
       Image.findByIdAndUpdate({ _id: id }, { $set: params }, { new: true })
         .then((result) => {
           handleSuccess({ res, message: "文件修改成功", result });

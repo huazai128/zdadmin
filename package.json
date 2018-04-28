@@ -25,6 +25,8 @@
     "helmet": "^3.6.0",
     "idle-gc": "^1.0.1",
     "jsonwebtoken": "^7.4.0",
+    "markdown": "^0.5.0",
+    "marked": "^0.3.19",
     "moment": "^2.22.0",
     "mongoose": "^5.0.7",
     "mongoose-auto-increment": "^5.0.1",

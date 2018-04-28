@@ -24,7 +24,7 @@ const isCodeExp = (exp) => {
 // 注册用户
 authCtrl.other.POST = (req, res) => {
   const { body, session } = req;
-  if (!body.email || !body.password || !body.confirm) {
+  if (!body.email || !body.password || !body.confirm || !body.email.trim() || !body.password.trim() || !body.confirm.trim()) {
     handleError({ res, message: "Email或者密码不为空" });
     return false;
   }

@@ -6,7 +6,7 @@ autoIncrement.initialize(mongoose.connection);  //自动ID增长  初始化
 
 const applySchema = new mongoose.Schema({
 
-  // 测试类型 0:功能测试 1：兼容测试
+  // 测试类型 0:功能测试 1：
   mold: { type: Number, default: 0, },
 
   // 公司名称

@@ -101,6 +101,7 @@ const routes = (app) => {
     // 解决方案
     app.all("/plan", controllers.plan.list);
     app.all("/plan/:_id", controllers.plan.item);
+    app.all("/p_excel", controllers.plan.excel);
 
     // 后台账号登录管理
     app.all("/account", controllers.user.list);

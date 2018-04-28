@@ -21,34 +21,42 @@ const getKyCheck = (res, result) => {
         })
       })
     }
-    handleSuccess({
-      res,
-      message: "获取数据成功",
-      result: {
-        data: result.docs,
-        pagination: {
-          total: result.total,
-          current_page: result.page,
-          total_page: result.pages,
-          pre_page: result.limit
-        }
-      }
-    })
+    getLists(res, result);
   })
     .catch((err) => {
       handleError({ res, message: "获取文章失败", err })
     })
 }
 
-const getCommunityList = (res, query, options) => {
+const getLists = (res, result) => {
+  handleSuccess({
+    res,
+    message: "获取数据成功",
+    result: {
+      data: result.docs,
+      pagination: {
+        total: result.total,
+        current_page: result.page,
+        total_page: result.pages,
+        pre_page: result.limit
+      }
+    }
+  })
+}
+
+const getCommunityList = (res, query, options, p_hou = false) => {
   Community.paginate(query, options).then((result) => {
-    getKyCheck(res, result);
+    if (p_hou) {
+      getLists(res, result);
+    } else {
+      getKyCheck(res, result);
+    }
   })
     .catch((error) => {
+      console.log(error)
       handleError({ res, message: "查询失败", error })
     })
 }
-
 
 // 保存
 comCtrl.list.POST = ({ body: community }, res) => {
@@ -84,7 +92,7 @@ comCtrl.list.POST = ({ body: community }, res) => {
 
 // 获取所有数据
 comCtrl.list.GET = (req, res) => {
-  const { keywords, page, pre_page, state, choice, recommend, sort, user_id, c_user } = req.query;
+  const { keywords, page, pre_page, state, choice, recommend, sort, user_id, c_user, p_hou } = req.query;
   const arr = [0, 1, -1];
   let sortQuery = {};
   if (sort) {
@@ -123,7 +131,7 @@ comCtrl.list.GET = (req, res) => {
     query.c_user = { $in: [c_user] };
     delete query.userId;
   }
-  getCommunityList(res, query, options);
+  getCommunityList(res, query, options, p_hou);
 }
 
 // 批量修改

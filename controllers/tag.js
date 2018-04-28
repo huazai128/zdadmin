@@ -28,7 +28,7 @@ tagCtrls.list.POST = ({ body: tag }, res) => {
 }
 // 获取所有列表数据
 tagCtrls.list.GET = (req, res) => {
-  let { page = 1, pre_page = 5, enable } = req.query;
+  let { page = 1, pre_page = 8, enable } = req.query;
   const options = {
     sort: { top: -1, id: -1 },
     page: Number(page),
